@@ -1,5 +1,3 @@
-
-
 # 🎮 StickClimber – Prototype en cours de développement
 
 **StickClimber** est un jeu expérimental en WebGL utilisant **Three.js**, **Cannon-es**, et la **Gamepad API**.  
