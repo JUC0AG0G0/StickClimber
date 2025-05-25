@@ -3,7 +3,7 @@ import { getGamepadInput } from './input.js';
 import { Player } from './player.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#87CEEB"); // 🌤️ Fond bleu ciel
+scene.background = new THREE.Color("#87CEEB");
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 5;

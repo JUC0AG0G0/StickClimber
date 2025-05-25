@@ -55,18 +55,24 @@ export function getGamepadInput() {
 
     hideGamepadPopup();
 
+    function round(value) {
+        if (Math.abs(value) < 0.1) return 0;
+        return Number(value.toFixed(2));
+    }
+
     return {
         leftStick: {
-            x: gp.axes[0] || 0,
-            y: gp.axes[1] || 0,
+            x: round(gp.axes[0] || 0),
+            y: round(gp.axes[1] || 0),
         },
         rightStick: {
-            x: gp.axes[2] || 0,
-            y: gp.axes[3] || 0,
+            x: round(gp.axes[2] || 0),
+            y: round(gp.axes[3] || 0),
         },
         L2: gp.buttons[6]?.pressed || false,
         R2: gp.buttons[7]?.pressed || false,
     };
+
 }
 
 function createJoystickCanvas(id, label) {
