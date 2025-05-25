@@ -34,13 +34,18 @@ export class Player {
         scene.add(this.group);
     }
 
-    update(input) {
-        if (!input) return;
+update(input) {
+    if (!input) return;
 
-        this.leftArm.rotation.z = input.leftStick.y;
-        this.rightArm.rotation.z = input.rightStick.y;
+    // Calcul de l'angle en radians pour chaque bras
+    const leftAngle = Math.atan2(input.leftStick.x, input.leftStick.y);
+    const rightAngle = Math.atan2(input.rightStick.x, input.rightStick.y);
 
-        this.leftHand.material.color.set(input.L2 ? "#f00" : "#aaa");
-        this.rightHand.material.color.set(input.R2 ? "#f00" : "#aaa");
-    }
+    this.leftArm.rotation.z = leftAngle;
+    this.rightArm.rotation.z = rightAngle;
+
+    this.leftHand.material.color.set(input.L2 ? "#f00" : "#aaa");
+    this.rightHand.material.color.set(input.R2 ? "#f00" : "#aaa");
+}
+
 }
