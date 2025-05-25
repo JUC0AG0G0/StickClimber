@@ -156,6 +156,12 @@ function drawStick(canvasId, x, y) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
+  const magnitude = Math.sqrt(x * x + y * y);
+  if (magnitude > 1) {
+    x /= magnitude;
+    y /= magnitude;
+  }
+
   const dotX = centerX + x * radius;
   const dotY = centerY + y * radius;
 
@@ -171,8 +177,8 @@ function updateGamepadVisual(input) {
 
   const l2 = document.getElementById("l2-status");
   const r2 = document.getElementById("r2-status");
-  if (l2) l2.innerText = `L2 : ${input.L2 ? "True" : "False"}`;
-  if (r2) r2.innerText = `R2 : ${input.R2 ? "True" : "False"}`;
+  if (l2) l2.innerText = `L2 : ${input.L2 ? "✅" : "❌"}`;
+  if (r2) r2.innerText = `R2 : ${input.R2 ? "✅" : "❌"}`;
 }
 
 function pollGamepad() {
