@@ -50,13 +50,23 @@ export class Player {
         this.rightLeg.position.set(0.15, 1.1, 0);
         this.group.add(this.rightLeg);
 
-        scene.add(this.group);
+        head.castShadow = true;
+        body.castShadow = true;
+        this.leftArm.castShadow = true;
+        this.rightArm.castShadow = true;
+        this.leftHand.castShadow = true;
+        this.rightHand.castShadow = true;
+        this.leftLeg.castShadow = true;
+        this.rightLeg.castShadow = true;
 
         this.leftHandAnchored = false;
         this.rightHandAnchored = false;
         this.leftHandAnchorPos = new THREE.Vector3();
         this.rightHandAnchorPos = new THREE.Vector3();
 
+        this.group.position.y = -0.28;
+
+        scene.add(this.group);
     }
 
     update(input) {
@@ -64,14 +74,12 @@ export class Player {
 
         if (input.L2 && !this.leftHandAnchored) {
             this.leftHandAnchored = true;
-            this.leftHand.getWorldPosition(this.leftHandAnchorPos);
         } else if (!input.L2 && this.leftHandAnchored) {
             this.leftHandAnchored = false;
         }
 
         if (input.R2 && !this.rightHandAnchored) {
             this.rightHandAnchored = true;
-            this.rightHand.getWorldPosition(this.rightHandAnchorPos);
         } else if (!input.R2 && this.rightHandAnchored) {
             this.rightHandAnchored = false;
         }
@@ -89,18 +97,27 @@ export class Player {
         this.leftHand.material.color.set(this.leftHandAnchored ? "#f00" : "#aaa");
         this.rightHand.material.color.set(this.rightHandAnchored ? "#f00" : "#aaa");
 
+        const moveSpeed = 0.03;
+
         if (this.leftHandAnchored) {
-            this.leftHand.parent.updateMatrixWorld();
-            this.leftHand.position.setFromMatrixPosition(this.leftHand.parent.matrixWorld.clone().invert().multiply(
-                new THREE.Matrix4().makeTranslation(...this.leftHandAnchorPos.toArray())
-            ));
+            const angle = this.leftArm.rotation.z;
+            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
+            this.group.position.sub(offset);
         }
 
         if (this.rightHandAnchored) {
-            this.rightHand.parent.updateMatrixWorld();
-            this.rightHand.position.setFromMatrixPosition(this.rightHand.parent.matrixWorld.clone().invert().multiply(
-                new THREE.Matrix4().makeTranslation(...this.rightHandAnchorPos.toArray())
-            ));
+            const angle = this.rightArm.rotation.z;
+            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
+            this.group.position.sub(offset);
+        }
+
+        if (!this.leftHandAnchored && !this.rightHandAnchored) {
+            this.group.position.y -= 0.0981
+        }
+
+        const minY = -0.28 ;
+        if (this.group.position.y < minY) {
+            this.group.position.y = minY;
         }
     }
 }
