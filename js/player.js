@@ -1,4 +1,5 @@
 import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
+import { triggerGamepadFeedback } from './feedback.js';
 
 export class Player {
     constructor(scene) {
@@ -66,6 +67,8 @@ export class Player {
 
         this.group.position.y = -0.28;
 
+        this.wasOnGround = true;
+
         scene.add(this.group);
     }
 
@@ -115,9 +118,17 @@ export class Player {
             this.group.position.y -= 0.0981
         }
 
-        const minY = -0.28 ;
+        const minY = -0.28;
         if (this.group.position.y < minY) {
             this.group.position.y = minY;
         }
+
+        const onGround = this.group.position.y <= minY;
+
+        if (onGround && !this.wasOnGround) {
+            triggerGamepadFeedback();
+        }
+
+        this.wasOnGround = onGround;
     }
 }
