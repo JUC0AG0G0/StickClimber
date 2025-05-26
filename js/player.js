@@ -51,19 +51,63 @@ export class Player {
         this.group.add(this.rightLeg);
 
         scene.add(this.group);
+
+        this.leftHandAnchored = false;
+this.rightHandAnchored = false;
+this.leftHandAnchorPos = new THREE.Vector3();
+this.rightHandAnchorPos = new THREE.Vector3();
+
     }
 
-    update(input) {
-        if (!input) return;
+update(input) {
+    if (!input) return;
 
+    // Gérer ancrage main gauche (L2)
+    if (input.L2 && !this.leftHandAnchored) {
+        this.leftHandAnchored = true;
+        this.leftHand.getWorldPosition(this.leftHandAnchorPos);
+    } else if (!input.L2 && this.leftHandAnchored) {
+        this.leftHandAnchored = false;
+    }
+
+    // Gérer ancrage main droite (R2)
+    if (input.R2 && !this.rightHandAnchored) {
+        this.rightHandAnchored = true;
+        this.rightHand.getWorldPosition(this.rightHandAnchorPos);
+    } else if (!input.R2 && this.rightHandAnchored) {
+        this.rightHandAnchored = false;
+    }
+
+    // Si la main n’est pas ancrée, suivre le stick
+    if (!this.leftHandAnchored) {
         const leftAngle = Math.atan2(input.leftStick.x, input.leftStick.y);
-        const rightAngle = Math.atan2(input.rightStick.x, input.rightStick.y);
-
         this.leftArm.rotation.z = leftAngle;
-        this.rightArm.rotation.z = rightAngle;
-
-        this.leftHand.material.color.set(input.L2 ? "#f00" : "#aaa");
-        this.rightHand.material.color.set(input.R2 ? "#f00" : "#aaa");
     }
+
+    if (!this.rightHandAnchored) {
+        const rightAngle = Math.atan2(input.rightStick.x, input.rightStick.y);
+        this.rightArm.rotation.z = rightAngle;
+    }
+
+    // Mise à jour des couleurs
+    this.leftHand.material.color.set(this.leftHandAnchored ? "#f00" : "#aaa");
+    this.rightHand.material.color.set(this.rightHandAnchored ? "#f00" : "#aaa");
+
+    // Si main ancrée, on replace la main à sa position enregistrée
+    if (this.leftHandAnchored) {
+        this.leftHand.parent.updateMatrixWorld(); // Nécessaire avant setFromWorldPosition
+        this.leftHand.position.setFromMatrixPosition(this.leftHand.parent.matrixWorld.clone().invert().multiply(
+            new THREE.Matrix4().makeTranslation(...this.leftHandAnchorPos.toArray())
+        ));
+    }
+
+    if (this.rightHandAnchored) {
+        this.rightHand.parent.updateMatrixWorld();
+        this.rightHand.position.setFromMatrixPosition(this.rightHand.parent.matrixWorld.clone().invert().multiply(
+            new THREE.Matrix4().makeTranslation(...this.rightHandAnchorPos.toArray())
+        ));
+    }
+}
+
 
 }
