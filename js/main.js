@@ -43,11 +43,29 @@ light.shadow.camera.far = 20;
 
 floor.receiveShadow = true;
 
+let score = 0;
+let maxHeight = 0;
+
 const player = new Player(scene);
 
 function gameLoop() {
     const input = getGamepadInput();
     player.update(input);
+
+    const currentHeight = player.group.position.y;
+
+    if (currentHeight > maxHeight) {
+        maxHeight = currentHeight;
+        score = Math.floor(maxHeight);
+    }
+
+    if (currentHeight <= 0.1) {
+        score = 0;
+        maxHeight = 0;
+    }
+
+    const display = document.getElementById("score-display");
+    if (display) display.innerText = `Score : ${score}`;
 
     camera.position.x = player.group.position.x;
     camera.position.y = player.group.position.y + 2.7;
