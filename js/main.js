@@ -56,7 +56,7 @@ function gameLoop() {
 
     if (currentHeight > maxHeight) {
         maxHeight = currentHeight;
-        score = Math.floor(maxHeight);
+        score = Math.floor(maxHeight * 3);
     }
 
     if (currentHeight <= 0.1) {
