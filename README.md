@@ -44,12 +44,15 @@ Voici les grandes étapes du développement du projet :
 - [x] Système de détection de manette
 - [x] Affichage et lecture des inputs (sticks + gâchettes)
 - [x] Architecture modulaire avec séparation logique des fichiers
+- [x] Ajout du personnage et de ses articulations physiques
+- [x] Représentation basique en Three.js
+- [x] Corps segmenté avec articulation physique via Cannon-es
+- [x] Système de score en fonction de la hauteur atteinte
 
 ### 🔜 Prochaine étape
 
 - 🔧 **Création du personnage stickman**
-  - Représentation basique en Three.js
-  - Corps segmenté avec articulation physique via Cannon-es
+  - Amélioration de la physique
 
 ---
 
@@ -72,12 +75,9 @@ Voici les grandes étapes du développement du projet :
 
 ## 📅 Roadmap à venir
 
-- [ ] Ajout du personnage et de ses articulations physiques
 - [ ] Création terrain infini
 - [ ] Création physique
-- [ ] Système de score en fonction de la hauteur atteinte
 - [ ] Mise en place du menu principal
 - [ ] Animation de caméra lors du lancement
 - [ ] Interface UI : score, redémarrage
 - [ ] Design visuel et sonore amélioré
-- [ ] Publication finale sur `main`
