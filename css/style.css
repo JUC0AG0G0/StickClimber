@@ -1,6 +1,7 @@
 body {
   margin: 0;
   padding: 0;
+  font-family: monospace;
 }
 
 #menu {
@@ -22,6 +23,19 @@ body {
 }
 
 #gamepad-popup {
-  font-family: Arial, sans-serif;
+  font-family: monospace;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#score-display {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-family: monospace;
+  font-size: 18px;
+  z-index: 1000;
 }
