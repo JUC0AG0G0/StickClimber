@@ -77,22 +77,38 @@ export class Player {
 
         if (input.L2 && !this.leftHandAnchored) {
             this.leftHandAnchored = true;
+            this.leftHand.getWorldPosition(this.leftHandAnchorPos);
         } else if (!input.L2 && this.leftHandAnchored) {
             this.leftHandAnchored = false;
         }
 
         if (input.R2 && !this.rightHandAnchored) {
             this.rightHandAnchored = true;
+            this.rightHand.getWorldPosition(this.rightHandAnchorPos);
         } else if (!input.R2 && this.rightHandAnchored) {
             this.rightHandAnchored = false;
         }
 
-        if (!this.leftHandAnchored) {
+        if (this.leftHandAnchored) {
+            const armWorldPos = new THREE.Vector3();
+            this.leftArm.getWorldPosition(armWorldPos);
+
+            const dir = new THREE.Vector3().subVectors(this.leftHandAnchorPos, armWorldPos);
+            const angle = Math.atan2(dir.x, -dir.y);
+            this.leftArm.rotation.z = angle;
+        } else {
             const leftAngle = Math.atan2(input.leftStick.x, input.leftStick.y);
             this.leftArm.rotation.z = leftAngle;
         }
 
-        if (!this.rightHandAnchored) {
+        if (this.rightHandAnchored) {
+            const armWorldPos = new THREE.Vector3();
+            this.rightArm.getWorldPosition(armWorldPos);
+
+            const dir = new THREE.Vector3().subVectors(this.rightHandAnchorPos, armWorldPos);
+            const angle = Math.atan2(dir.x, -dir.y);
+            this.rightArm.rotation.z = angle;
+        } else {
             const rightAngle = Math.atan2(input.rightStick.x, input.rightStick.y);
             this.rightArm.rotation.z = rightAngle;
         }
@@ -100,22 +116,8 @@ export class Player {
         this.leftHand.material.color.set(this.leftHandAnchored ? "#f00" : "#aaa");
         this.rightHand.material.color.set(this.rightHandAnchored ? "#f00" : "#aaa");
 
-        const moveSpeed = 0.03;
-
-        if (this.leftHandAnchored) {
-            const angle = this.leftArm.rotation.z;
-            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
-            this.group.position.sub(offset);
-        }
-
-        if (this.rightHandAnchored) {
-            const angle = this.rightArm.rotation.z;
-            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
-            this.group.position.sub(offset);
-        }
-
         if (!this.leftHandAnchored && !this.rightHandAnchored) {
-            this.group.position.y -= 0.0981
+            this.group.position.y -= 0.0981;
         }
 
         const minY = -0.28;
@@ -130,5 +132,29 @@ export class Player {
         }
 
         this.wasOnGround = onGround;
+
+
+        // Debug
+        const debugDiv = document.getElementById("debug");
+
+        const leftHandWorldPos = new THREE.Vector3();
+        this.leftHand.getWorldPosition(leftHandWorldPos);
+
+        const rightHandWorldPos = new THREE.Vector3();
+        this.rightHand.getWorldPosition(rightHandWorldPos);
+
+        const groupPos = this.group.position;
+
+        debugDiv.innerHTML = `
+<b>=== DEBUG ===</b><br/>
+<b>Group:</b> (${groupPos.x.toFixed(2)}, ${groupPos.y.toFixed(2)}, ${groupPos.z.toFixed(2)})<br/>
+<b>Left Hand:</b> (${leftHandWorldPos.x.toFixed(2)}, ${leftHandWorldPos.y.toFixed(2)}, ${leftHandWorldPos.z.toFixed(2)})<br/>
+<b>Right Hand:</b> (${rightHandWorldPos.x.toFixed(2)}, ${rightHandWorldPos.y.toFixed(2)}, ${rightHandWorldPos.z.toFixed(2)})<br/>
+<b>Left Arm rot.z:</b> ${this.leftArm.rotation.z.toFixed(2)}<br/>
+<b>Right Arm rot.z:</b> ${this.rightArm.rotation.z.toFixed(2)}<br/>
+<b>L2 Anchored:</b> ${this.leftHandAnchored}<br/>
+<b>R2 Anchored:</b> ${this.rightHandAnchored}<br/>
+`;
     }
+
 }
