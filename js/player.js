@@ -87,6 +87,11 @@ export class Player {
         this.leftAnchorPos = new THREE.Vector3();   // position MONDE fixe de la main gauche
         this.rightAnchorPos = new THREE.Vector3();
 
+        // Référence vers la prise (wall.js) actuellement tenue par chaque main,
+        // pour pouvoir la libérer proprement (wall.release) quand on lâche.
+        this.leftHold = null;
+        this.rightHold = null;
+
         this.group.position.y = GROUND_Y;
         this.wasOnGround = true;
 
@@ -98,24 +103,55 @@ export class Player {
         return this.group.position.clone().add(handLocalOffset(shoulder, angle));
     }
 
-    update(input) {
+    // `wall` (ClimbingWall, voir wall.js) est optionnel : sans lui, aucune main
+    // ne peut plus jamais s'ancrer (il n'y a alors aucune prise à trouver).
+    update(input, wall) {
         if (!input) return;
 
         // Angle de chaque bras (suit le stick, ou revient au repos / en suspension si relâché).
         const leftAngle = armAngle(input.leftStick, this.leftArm.rotation.z, input.L2);
         const rightAngle = armAngle(input.rightStick, this.rightArm.rotation.z, input.R2);
 
-        // --- Au moment PRÉCIS où une main s'accroche, on fige sa position monde. ---
+        // --- Tentative d'agrippement (tant que la gâchette est pressée et pas
+        // encore ancré) : on ne s'ancre QUE si une prise est réellement à
+        // portée de la main à cet instant. Si aucune prise n'est trouvée, rien
+        // ne se passe et on retentera la frame suivante tant que la gâchette
+        // reste enfoncée (permet de "rattraper" une prise en balançant le bras
+        // sans avoir à retimer précisément l'appui).
         if (input.L2 && !this.leftAnchored) {
-            this.leftArm.rotation.z = leftAngle;
-            this.leftAnchorPos.copy(this.handWorldPos(LEFT_SHOULDER, leftAngle));
+            const handPos = this.handWorldPos(LEFT_SHOULDER, leftAngle);
+            const hold = wall?.findGrabbableHold(handPos);
+            if (hold) {
+                this.leftArm.rotation.z = leftAngle;
+                this.leftAnchorPos.set(hold.x, hold.y, hold.z);
+                this.leftHold = hold;
+                this.leftAnchored = true;
+                wall.grab(hold, 'left');
+            }
         }
         if (input.R2 && !this.rightAnchored) {
-            this.rightArm.rotation.z = rightAngle;
-            this.rightAnchorPos.copy(this.handWorldPos(RIGHT_SHOULDER, rightAngle));
+            const handPos = this.handWorldPos(RIGHT_SHOULDER, rightAngle);
+            const hold = wall?.findGrabbableHold(handPos);
+            if (hold) {
+                this.rightArm.rotation.z = rightAngle;
+                this.rightAnchorPos.set(hold.x, hold.y, hold.z);
+                this.rightHold = hold;
+                this.rightAnchored = true;
+                wall.grab(hold, 'right');
+            }
         }
-        this.leftAnchored = input.L2;
-        this.rightAnchored = input.R2;
+
+        // --- Relâchement (la gâchette repasse en dessous du seuil) ---
+        if (!input.L2 && this.leftAnchored) {
+            wall?.release(this.leftHold);
+            this.leftHold = null;
+            this.leftAnchored = false;
+        }
+        if (!input.R2 && this.rightAnchored) {
+            wall?.release(this.rightHold);
+            this.rightHold = null;
+            this.rightAnchored = false;
+        }
 
         // Retour visuel des mains ancrées
         this.leftHand.material.color.set(this.leftAnchored ? "#f00" : "#aaa");

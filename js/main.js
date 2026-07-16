@@ -1,8 +1,9 @@
 import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
 import { getGamepadInput } from './input.js';
 import { Player } from './player.js';
+import { ClimbingWall } from './wall.js';
 import { triggerGamepadFeedback } from './feedback.js';
-import { initUI, showScreen, isVibrationOn, syncTriggerEffect, saveScore } from './ui.js';
+import { initUI, showScreen, getDualSense, saveScore, syncTriggerEffect } from './ui.js';
 
 const GROUND_Y = -0.28;
 
@@ -45,6 +46,7 @@ floor.receiveShadow = true;
 scene.add(floor);
 
 const player = new Player(scene);
+const wall = new ClimbingWall(scene);
 
 // ============================ État de jeu ============================
 let running = false;
@@ -59,6 +61,9 @@ function resetGame() {
     player.rightArm.rotation.z = 0;
     player.leftAnchored = false;
     player.rightAnchored = false;
+    player.leftHold = null;
+    player.rightHold = null;
+    wall.reset(); // repart d'un mur vierge (sinon les prises de la tentative précédente resteraient affichées)
     score = 0;
     maxHeight = 0;
     lastL2 = false;
@@ -75,10 +80,11 @@ function updateScore() {
     if (el) el.textContent = `Score : ${score}`;
 }
 
+// Petite vibration quand une main s'accroche.
 function grabFeedback(input) {
     if (!input) return;
-    const grabbedL2 = input.L2 && !lastL2;
-    const grabbedR2 = input.R2 && !lastR2;
+    if (input.L2 && !lastL2) triggerGamepadFeedback();
+    if (input.R2 && !lastR2) triggerGamepadFeedback();
     lastL2 = input.L2;
     lastR2 = input.R2;
 }
@@ -87,7 +93,8 @@ function loop() {
     if (!running) return;
 
     const input = getGamepadInput();
-    player.update(input);
+    wall.update(player.group.position.y);
+    player.update(input, wall);
     grabFeedback(input);
     updateScore();
 
@@ -110,6 +117,7 @@ function startGame() {
     resetGame();
     renderer.setSize(window.innerWidth, window.innerHeight);
 
+    // Applique l'état des gâchettes choisi dans le menu (API à jour : ui.js/dualsense.js).
     syncTriggerEffect();
 
     running = true;
