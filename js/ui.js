@@ -1,4 +1,5 @@
 import { DualSense } from './dualsense.js';
+import { getGamepadInput } from './input.js';
 
 const SCREENS = ['menu', 'leaderboard', 'controls', 'game'];
 const LB_KEY = 'stickclimber_scores';
@@ -69,6 +70,9 @@ export function showScreen(name) {
 }
 
 // ===================== Navigation manette =====================
+// Note : la navigation du menu utilise directement navigator.getGamepads()
+// (et non getGamepadInput()) car elle a besoin des boutons croix/rond/dpad
+// bruts, indépendamment de la logique de "grip" des gâchettes.
 let focusIndex = 0;
 let navCooldown = 0;
 let prevConfirm = false;
@@ -152,16 +156,6 @@ function updateToggleButton(btn, label, isOn) {
     btn.classList.toggle('on', isOn);
 }
 
-function applyEffect(effect) {
-    if (!ds || !ds.connected) return;
-    switch (effect) {
-        case 'off': ds.off('both'); break;
-        case 'resistance': ds.feedback('both', 0, 6); break;
-        case 'weapon': ds.weapon('right', 2, 7, 8); break;
-        case 'vibration': ds.vibration('left', 0, 6, 20); break;
-    }
-}
-
 // ===================== Visualisation manette =====================
 function buildGamepadVisual() {
     const host = document.getElementById('gamepad-visual-host');
@@ -188,8 +182,6 @@ function stickBox(id, label) {
     return box;
 }
 
-function deadzone(v) { return Math.abs(v) < 0.1 ? 0 : v; }
-
 function drawStick(canvasId, x, y) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -215,16 +207,19 @@ function drawStick(canvasId, x, y) {
 
 function visualLoop() {
     if (currentScreen === 'controls') {
-        const pad = [...(navigator.getGamepads?.() || [])].find((p) => p);
-        if (pad) {
-            drawStick('viz-left', deadzone(pad.axes[0] || 0), deadzone(pad.axes[1] || 0));
-            drawStick('viz-right', deadzone(pad.axes[2] || 0), deadzone(pad.axes[3] || 0));
-            const l2 = pad.buttons[6]?.pressed;
-            const r2 = pad.buttons[7]?.pressed;
+        // On repasse par input.js pour rester cohérent avec ce qui est
+        // réellement utilisé en jeu : mêmes valeurs (leftStick/rightStick,
+        // déjà arrondies + deadzone) et même seuil de "grip" (TRIGGER_THRESHOLD
+        // via gripFromValue) pour L2/R2, au lieu du `.pressed` brut du navigateur.
+        const input = getGamepadInput();
+        if (input) {
+            drawStick('viz-left', input.leftStick.x, input.leftStick.y);
+            drawStick('viz-right', input.rightStick.x, input.rightStick.y);
+
             const le = document.getElementById('viz-l2');
             const re = document.getElementById('viz-r2');
-            if (le) le.textContent = `L2 ${l2 ? '✅' : '❌'}`;
-            if (re) re.textContent = `R2 ${r2 ? '✅' : '❌'}`;
+            if (le) le.textContent = `L2 ${input.L2 ? '✅' : '❌'} (${Math.round(input.L2value * 100)}%)`;
+            if (re) re.textContent = `R2 ${input.R2 ? '✅' : '❌'} (${Math.round(input.R2value * 100)}%)`;
         }
     }
     requestAnimationFrame(visualLoop);

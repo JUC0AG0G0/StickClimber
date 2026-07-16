@@ -1,9 +1,5 @@
-// input.js
-
-// 130 sur une échelle de 255 correspond à ~0.51
 export const TRIGGER_THRESHOLD = 0.71;
 
-// Vérification simple : retourne true si la valeur dépasse le seuil
 export const gripFromValue = (value) => value >= TRIGGER_THRESHOLD;
 
 let connectedGamepad = null;
@@ -21,7 +17,6 @@ window.addEventListener('gamepaddisconnected', (e) => {
   }
 });
 
-// Arrondi à 2 décimales avec zone morte de 0.1 pour les sticks
 const round = (v) => Math.abs(v) < 0.1 ? 0 : Number(v.toFixed(2));
 
 // --- Récupération des entrées ---
