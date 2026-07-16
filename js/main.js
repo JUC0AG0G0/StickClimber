@@ -2,7 +2,7 @@ import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
 import { getGamepadInput } from './input.js';
 import { Player } from './player.js';
 import { triggerGamepadFeedback } from './feedback.js';
-import { initUI, showScreen, getDualSense, saveScore } from './ui.js';
+import { initUI, showScreen, isVibrationOn, syncTriggerEffect, saveScore } from './ui.js';
 
 const GROUND_Y = -0.28;
 
@@ -75,13 +75,15 @@ function updateScore() {
     if (el) el.textContent = `Score : ${score}`;
 }
 
-// Petite vibration quand une main s'accroche.
 function grabFeedback(input) {
     if (!input) return;
-    if (input.L2 && !lastL2) triggerGamepadFeedback();
-    if (input.R2 && !lastR2) triggerGamepadFeedback();
+    const grabbedL2 = input.L2 && !lastL2;
+    const grabbedR2 = input.R2 && !lastR2;
     lastL2 = input.L2;
     lastR2 = input.R2;
+
+    if (!isVibrationOn()) return;
+    if (grabbedL2 || grabbedR2) triggerGamepadFeedback();
 }
 
 function loop() {
@@ -111,9 +113,7 @@ function startGame() {
     resetGame();
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Applique l'état des gâchettes choisi dans le menu.
-    const ds = getDualSense();
-    if (ds && ds.connected && ds.triggersOn) ds.feedback('both', 0, 8);
+    syncTriggerEffect();
 
     running = true;
     loop();

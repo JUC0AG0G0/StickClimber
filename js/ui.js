@@ -1,7 +1,3 @@
-// ui.js
-// Écrans (menu / classement / manette / jeu), navigation à la manette,
-// visualisation de la manette, panneau DualSense et classement local.
-
 import { DualSense } from './dualsense.js';
 
 const SCREENS = ['menu', 'leaderboard', 'controls', 'game'];
@@ -11,7 +7,21 @@ let handlers = {};
 let currentScreen = 'menu';
 let ds = null;
 
+let triggersOn = false; // correspond au texte HTML "Gâchettes : Inactif"
+let vibrationOn = true; // correspond au texte HTML "Vibration : Actif"
+
 export function getDualSense() { return ds; }
+export function isVibrationOn() { return vibrationOn; }
+export function areTriggersOn() { return triggersOn; }
+
+export function syncTriggerEffect() {
+    if (!ds || !ds.connected) return;
+    if (triggersOn) {
+        ds.setTriggerWeapon('both', 100, 130, 255);
+    } else {
+        ds.setTriggerOff('both');
+    }
+}
 
 // ============================ Init ============================
 export function initUI(h) {
@@ -105,21 +115,41 @@ function setupControlsPanel() {
     buildGamepadVisual();
 
     const status = document.getElementById('ds-status');
+    const triggersBtn = document.getElementById('toggle-triggers');
+    const vibrationBtn = document.getElementById('toggle-vibration');
+
+    // Affichage initial cohérent avec l'état par défaut
+    updateToggleButton(triggersBtn, 'Gâchettes', triggersOn);
+    updateToggleButton(vibrationBtn, 'Vibration', vibrationOn);
+
+    triggersBtn.addEventListener('click', () => {
+        triggersOn = !triggersOn;
+        updateToggleButton(triggersBtn, 'Gâchettes', triggersOn);
+        syncTriggerEffect();
+    });
+
+    vibrationBtn.addEventListener('click', () => {
+        vibrationOn = !vibrationOn;
+        updateToggleButton(vibrationBtn, 'Vibration', vibrationOn);
+    });
+
     document.getElementById('ds-connect').addEventListener('click', async () => {
         try {
             status.textContent = 'Connexion…';
             ds = new DualSense();
             await ds.connect();
             status.textContent = `Connecté (${ds.connectionType})`;
+            syncTriggerEffect(); // applique le toggle "Gâchettes" tel qu'il était réglé
         } catch (e) {
             ds = null;
             status.textContent = 'Erreur : ' + e.message;
         }
     });
+}
 
-    document.querySelectorAll('.ds-btn').forEach((btn) => {
-        btn.addEventListener('click', () => applyEffect(btn.dataset.effect));
-    });
+function updateToggleButton(btn, label, isOn) {
+    btn.textContent = `${label} : ${isOn ? 'Actif' : 'Inactif'}`;
+    btn.classList.toggle('on', isOn);
 }
 
 function applyEffect(effect) {
