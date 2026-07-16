@@ -76,7 +76,8 @@ Voici les grandes étapes du développement du projet :
 
 ## 📅 Roadmap à venir
 
-- [ ] Création physique (gravité, terrain chute)
+- [ ] Logique d'agripation
+- [ ] Création physique (gravité, inertie, terrain chute)
 - [ ] Mise en place du menu principal
 - [ ] Animation de caméra lors du lancement
 - [ ] Interface UI : score, redémarrage
