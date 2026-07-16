@@ -1,16 +1,23 @@
 import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
 import { getGamepadInput } from './input.js';
 import { Player } from './player.js';
+import { triggerGamepadFeedback } from './feedback.js';
+import { initUI, showScreen, getDualSense, saveScore } from './ui.js';
 
+const GROUND_Y = -0.28;
+
+// ============================ Scène ============================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color("#87CEEB");
+scene.background = new THREE.Color('#87CEEB');
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 2, 5);
 camera.rotation.x = -0.3;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById("game-canvas") });
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('game-canvas') });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -20,19 +27,6 @@ window.addEventListener('resize', () => {
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(0, 10, 10);
-scene.add(light);
-
-const floorGeometry = new THREE.PlaneGeometry(20, 20);
-const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = 0;
-floor.receiveShadow = true;
-scene.add(floor);
-
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
 light.castShadow = true;
 light.shadow.camera.left = -10;
 light.shadow.camera.right = 10;
@@ -40,40 +34,97 @@ light.shadow.camera.top = 10;
 light.shadow.camera.bottom = -10;
 light.shadow.camera.near = 1;
 light.shadow.camera.far = 20;
+scene.add(light);
 
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({ color: 0x228b22 })
+);
+floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
-
-let score = 0;
-let maxHeight = 0;
+scene.add(floor);
 
 const player = new Player(scene);
 
-function gameLoop() {
-    const input = getGamepadInput();
-    player.update(input);
+// ============================ État de jeu ============================
+let running = false;
+let score = 0;
+let maxHeight = 0;
+let lastL2 = false;
+let lastR2 = false;
 
-    const currentHeight = player.group.position.y;
+function resetGame() {
+    player.group.position.set(0, GROUND_Y, 0);
+    player.leftArm.rotation.z = 0;
+    player.rightArm.rotation.z = 0;
+    player.leftAnchored = false;
+    player.rightAnchored = false;
+    score = 0;
+    maxHeight = 0;
+    lastL2 = false;
+    lastR2 = false;
+}
 
-    if (currentHeight > maxHeight) {
-        maxHeight = currentHeight;
+function updateScore() {
+    const h = player.group.position.y;
+    if (h > maxHeight) {
+        maxHeight = h;
         score = Math.floor(maxHeight * 3);
     }
+    const el = document.getElementById('score-display');
+    if (el) el.textContent = `Score : ${score}`;
+}
 
-    if (currentHeight <= 0.1) {
-        score = 0;
-        maxHeight = 0;
+// Petite vibration quand une main s'accroche.
+function grabFeedback(input) {
+    if (!input) return;
+    if (input.L2 && !lastL2) triggerGamepadFeedback();
+    if (input.R2 && !lastR2) triggerGamepadFeedback();
+    lastL2 = input.L2;
+    lastR2 = input.R2;
+}
+
+function loop() {
+    if (!running) return;
+
+    const input = getGamepadInput();
+    player.update(input);
+    grabFeedback(input);
+    updateScore();
+
+    // Quitter vers le menu avec Options (bouton 9).
+    const pad = [...(navigator.getGamepads?.() || [])].find((p) => p);
+    if (pad && pad.buttons[9]?.pressed) {
+        quitToMenu();
+        return;
     }
-
-    const display = document.getElementById("score-display");
-    if (display) display.innerText = `Score : ${score}`;
 
     camera.position.x = player.group.position.x;
     camera.position.y = player.group.position.y + 2.7;
     camera.lookAt(player.group.position);
 
     renderer.render(scene, camera);
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
 }
 
+function startGame() {
+    resetGame();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-gameLoop();
+    // Applique l'état des gâchettes choisi dans le menu.
+    const ds = getDualSense();
+    if (ds && ds.connected && ds.triggersOn) ds.feedback('both', 0, 8);
+
+    running = true;
+    loop();
+}
+
+function quitToMenu() {
+    running = false;
+    saveScore(score);
+    showScreen('menu');
+}
+
+// ============================ Démarrage ============================
+initUI({ onPlay: startGame, onBack: quitToMenu });
+showScreen('menu');

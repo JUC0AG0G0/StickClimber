@@ -2,19 +2,53 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>StickClimber</title>
     <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
-    <div id="menu">
+    <!-- MENU PRINCIPAL -->
+    <section id="screen-menu" class="screen active">
         <h1>StickClimber</h1>
-    </div>
+        <nav class="menu-nav">
+            <button class="menu-btn" data-action="play">Jouer</button>
+            <button class="menu-btn" data-action="leaderboard">Classement</button>
+            <button class="menu-btn" data-action="controls">Manette</button>
+        </nav>
+        <p class="hint">Manette requise · ✕ valider · ○ retour</p>
+    </section>
 
-    <div id="score-display">
-        Score : 0
-    </div>
+    <!-- CLASSEMENT -->
+    <section id="screen-leaderboard" class="screen">
+        <h2>Classement</h2>
+        <ol id="leaderboard-list"></ol>
+        <button class="menu-btn" data-action="back">Retour</button>
+    </section>
 
-    <canvas id="game-canvas"></canvas>
+    <!-- MANETTE -->
+    <section id="screen-controls" class="screen">
+        <h2>Manette</h2>
+        <div id="gamepad-visual-host"></div>
+
+        <div class="ds-panel">
+            <button id="ds-connect" class="menu-btn">Connecter la DualSense</button>
+            <div id="ds-status" class="ds-status">Non connectée</div>
+            <p class="hint">Gâchettes adaptatives PS5 (WebHID) · à connecter à la souris</p>
+            <div class="ds-effects">
+                <button id="toggle-triggers" class="ds-btn">Gâchettes : Inactif</button>
+                <button id="toggle-vibration" class="ds-btn">Vibration : Actif</button>
+            </div>
+        </div>
+
+        <button class="menu-btn" data-action="back">Retour</button>
+    </section>
+
+    <!-- JEU -->
+    <section id="screen-game" class="screen">
+        <div id="score-display">Score : 0</div>
+        <button id="btn-quit" class="quit-btn">Menu ▸ (Options)</button>
+        <canvas id="game-canvas"></canvas>
+    </section>
 
     <script type="module" src="./js/main.js"></script>
 </body>

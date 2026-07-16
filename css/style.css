@@ -1,41 +1,151 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: monospace;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #0e1116;
+    color: #e8ecf1;
+    overflow: hidden;
 }
 
-#menu {
-  z-index: 1000;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* ---------- Écrans ---------- */
+.screen { position: fixed; inset: 0; display: none; }
+.screen.active { display: flex; }
+
+#screen-menu,
+#screen-leaderboard,
+#screen-controls {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 32px;
+    background: radial-gradient(circle at 50% 25%, #1b2634, #0e1116 70%);
 }
 
-#game-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+h1 {
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+h2 { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+
+.hint { opacity: .55; font-size: 13px; text-align: center; }
+
+/* ---------- Boutons de menu ---------- */
+.menu-nav { display: flex; flex-direction: column; gap: 12px; width: min(300px, 80vw); }
+
+.menu-btn {
+    padding: 14px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #e8ecf1;
+    background: #141c26;
+    border: 1px solid #2b3a4d;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.menu-btn:hover,
+.menu-btn.focused {
+    background: #1f6feb;
+    border-color: #4d8dff;
+    transform: translateY(-1px);
+    outline: none;
 }
 
-#gamepad-popup {
-  font-family: monospace;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-}
+/* ---------- Jeu ---------- */
+#screen-game { display: none; }
+#screen-game.active { display: block; }
+
+#game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 
 #score-display {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-family: monospace;
-  font-size: 18px;
-  z-index: 1000;
+    position: fixed;
+    top: 16px; left: 18px;
+    z-index: 5;
+    font-size: 22px;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .5);
+}
+
+.quit-btn {
+    position: fixed;
+    top: 14px; right: 16px;
+    z-index: 5;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: #e8ecf1;
+    background: rgba(20, 28, 38, .82);
+    border: 1px solid #2b3a4d;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* ---------- Classement ---------- */
+#leaderboard-list { list-style: none; width: min(340px, 85vw); display: flex; flex-direction: column; gap: 8px; }
+#leaderboard-list li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 18px;
+    background: #141c26;
+    border: 1px solid #2b3a4d;
+    border-radius: 10px;
+    font-size: 18px;
+}
+#leaderboard-list .rank { opacity: .6; }
+#leaderboard-list .pts { font-weight: 700; }
+#leaderboard-list .empty { justify-content: center; opacity: .5; font-size: 15px; }
+
+/* ---------- Panneau manette ---------- */
+#gamepad-visual-host { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.stick-box { text-align: center; color: #9fb0c3; font-size: 12px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.stick-box canvas { background: #0b0f14; border: 1px solid #2b3a4d; border-radius: 10px; }
+
+/* Jauges de gâchettes */
+.trigger-meters { display: flex; flex-direction: column; gap: 14px; min-width: 200px; }
+.trig-meter { display: flex; align-items: center; gap: 10px; }
+.trig-label { width: 26px; font-family: monospace; font-weight: 700; }
+.bar {
+    position: relative;
+    flex: 1;
+    height: 16px;
+    background: #0b0f14;
+    border: 1px solid #2b3a4d;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.fill { height: 100%; width: 0%; background: #4dd0a0; transition: width .04s linear; }
+.wall { position: absolute; top: -3px; bottom: -3px; width: 3px; background: #f0a020; box-shadow: 0 0 6px #f0a020; }
+.grip { width: 84px; font-size: 12px; font-family: monospace; opacity: .6; text-align: right; }
+.grip.on { color: #f05050; opacity: 1; font-weight: 700; }
+
+.ds-panel { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.ds-status { font-size: 14px; opacity: .85; }
+.ds-effects { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.ds-btn {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #e8ecf1;
+    background: #141c26;
+    border: 1px solid #2b3a4d;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+.ds-btn:hover, .ds-btn.focused { background: #1f6feb; outline: none; }
+.ds-btn.on { background: #1b8a5a; border-color: #2ecc87; }
+.ds-btn.on:hover, .ds-btn.on.focused { background: #23a86f; }
+
+/* ---------- Popup manette ---------- */
+.gamepad-popup {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    padding: 20px 30px;
+    background: rgba(0, 0, 0, .82);
+    color: #fff;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 12px;
 }

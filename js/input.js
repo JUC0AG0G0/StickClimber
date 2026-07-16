@@ -1,203 +1,80 @@
-let connectedGamepad = null;
+// input.js
+// Entrée de JEU (sticks + gâchettes L2/R2).
+// Les gâchettes sont lues en ANALOGIQUE : on "accroche" en franchissant le mur dur
+// (seuil GRAB) et on "décroche" en repassant sous RELEASE. L'écart entre les deux
+// est la petite zone morte demandée (hystérésis), qui évite les accroche/décroche
+// qui clignotent quand on reste pile sur le point dur.
 
-function showGamepadPopup(message) {
-    let popup = document.getElementById("gamepad-popup");
-    if (!popup) {
-        popup = document.createElement("div");
-        popup.id = "gamepad-popup";
-        popup.style.position = "fixed";
-        popup.style.top = "50%";
-        popup.style.left = "50%";
-        popup.style.transform = "translate(-50%, -50%)";
-        popup.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-        popup.style.color = "white";
-        popup.style.padding = "20px 30px";
-        popup.style.fontSize = "18px";
-        popup.style.borderRadius = "12px";
-        popup.style.zIndex = 1000;
-        popup.style.textAlign = "center";
-        popup.innerText = message;
-        document.body.appendChild(popup);
-    } else {
-        popup.innerText = message;
-        popup.style.display = "block";
+export const TRIGGER_GRAB = 0.70;    // franchir le mur -> accroche
+export const TRIGGER_RELEASE = 0.45; // repasser dessous -> décroche
+
+// État accroché/décroché avec hystérésis (fonction pure, réutilisée par le menu).
+export function gripFromValue(value, previous) {
+    if (!previous && value > TRIGGER_GRAB) return true;
+    if (previous && value < TRIGGER_RELEASE) return false;
+    return previous;
+}
+
+let connectedGamepad = null;
+let l2On = false;
+let r2On = false;
+
+window.addEventListener('gamepadconnected', (e) => {
+    connectedGamepad = e.gamepad;
+    hideGamepadPopup();
+});
+
+window.addEventListener('gamepaddisconnected', (e) => {
+    if (connectedGamepad && connectedGamepad.index === e.gamepad.index) {
+        connectedGamepad = null;
+        showGamepadPopup('🕹️ Manette déconnectée !');
     }
+});
+
+function round(v) {
+    if (Math.abs(v) < 0.1) return 0;
+    return Number(v.toFixed(2));
+}
+
+export function getGamepadInput() {
+    const pads = navigator.getGamepads?.() || [];
+    const gp = connectedGamepad ? pads[connectedGamepad.index] : [...pads].find((p) => p);
+
+    if (!gp) {
+        showGamepadPopup('🕹️ Veuillez connecter une manette !');
+        return null;
+    }
+    hideGamepadPopup();
+
+    const l2v = gp.buttons[6]?.value || 0;
+    const r2v = gp.buttons[7]?.value || 0;
+    l2On = gripFromValue(l2v, l2On);
+    r2On = gripFromValue(r2v, r2On);
+
+    return {
+        leftStick: { x: round(gp.axes[0] || 0), y: round(gp.axes[1] || 0) },
+        rightStick: { x: round(gp.axes[2] || 0), y: round(gp.axes[3] || 0) },
+        L2: l2On,
+        R2: r2On,
+        L2value: l2v,
+        R2value: r2v,
+    };
+}
+
+// --- Popup "connecter une manette" ---
+function showGamepadPopup(message) {
+    let popup = document.getElementById('gamepad-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'gamepad-popup';
+        popup.className = 'gamepad-popup';
+        document.body.appendChild(popup);
+    }
+    popup.textContent = message;
+    popup.style.display = 'block';
 }
 
 function hideGamepadPopup() {
-    const popup = document.getElementById("gamepad-popup");
-    if (popup) popup.style.display = "none";
-}
-
-window.addEventListener("gamepadconnected", (event) => {
-    connectedGamepad = event.gamepad;
-    hideGamepadPopup();
-    createGamepadVisual();
-    requestAnimationFrame(pollGamepad);
-});
-
-window.addEventListener("gamepaddisconnected", (event) => {
-    if (connectedGamepad && connectedGamepad.index === event.gamepad.index) {
-        connectedGamepad = null;
-        showGamepadPopup("🕹️ Manette déconnectée !");
-    }
-});
-
-export function getGamepadInput() {
-    if (!connectedGamepad) {
-        showGamepadPopup("🕹️ Veuillez connecter une manette !");
-        return null;
-    }
-
-    const gamepads = navigator.getGamepads();
-    const gp = gamepads[connectedGamepad.index];
-    if (!gp) return null;
-
-    hideGamepadPopup();
-
-    function round(value) {
-        if (Math.abs(value) < 0.1) return 0;
-        return Number(value.toFixed(2));
-    }
-
-    return {
-        leftStick: {
-            x: round(gp.axes[0] || 0),
-            y: round(gp.axes[1] || 0),
-        },
-        rightStick: {
-            x: round(gp.axes[2] || 0),
-            y: round(gp.axes[3] || 0),
-        },
-        L2: gp.buttons[6]?.pressed || false,
-        R2: gp.buttons[7]?.pressed || false,
-    };
-
-}
-
-function createJoystickCanvas(id, label) {
-    const container = document.createElement("div");
-    container.style.display = "inline-block";
-    container.style.margin = "10px";
-    container.style.textAlign = "center";
-    container.style.color = "#fff";
-
-    const title = document.createElement("div");
-    title.innerText = label;
-    title.style.marginBottom = "5px";
-
-    const canvas = document.createElement("canvas");
-    canvas.id = id;
-    canvas.width = 120;
-    canvas.height = 120;
-    canvas.style.border = "1px solid #555";
-    canvas.style.background = "#222";
-    canvas.style.borderRadius = "10px";
-
-    container.appendChild(title);
-    container.appendChild(canvas);
-
-    return container;
-}
-
-function createGamepadVisual() {
-    if (document.getElementById("gamepad-visual")) return;
-
-    const container = document.createElement("div");
-    container.id = "gamepad-visual";
-    container.style.position = "fixed";
-    container.style.bottom = "20px";
-    container.style.left = "50%";
-    container.style.transform = "translateX(-50%)";
-    container.style.backgroundColor = "rgba(0,0,0,0.7)";
-    container.style.padding = "20px";
-    container.style.borderRadius = "15px";
-    container.style.zIndex = 999;
-    container.style.display = "flex";
-    container.style.gap = "20px";
-    container.style.justifyContent = "center";
-
-    container.appendChild(
-        createJoystickCanvas("left-stick-canvas", "Stick Gauche")
-    );
-    container.appendChild(
-        createJoystickCanvas("right-stick-canvas", "Stick Droit")
-    );
-
-    const lrContainer = document.createElement("div");
-    lrContainer.style.display = "flex";
-    lrContainer.style.flexDirection = "column";
-    lrContainer.style.justifyContent = "center";
-    lrContainer.style.color = "#fff";
-    lrContainer.style.fontFamily = "monospace";
-    lrContainer.style.marginLeft = "20px";
-
-    const l2Status = document.createElement("div");
-    l2Status.id = "l2-status";
-    l2Status.innerText = "L2 : False";
-
-    const r2Status = document.createElement("div");
-    r2Status.id = "r2-status";
-    r2Status.innerText = "R2 : False";
-
-    lrContainer.appendChild(l2Status);
-    lrContainer.appendChild(r2Status);
-    container.appendChild(lrContainer);
-
-    document.body.appendChild(container);
-}
-
-function drawStick(canvasId, x, y) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width;
-    const h = canvas.height;
-
-    const centerX = w / 2;
-    const centerY = h / 2;
-    const radius = 40;
-
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#999";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    const magnitude = Math.sqrt(x * x + y * y);
-    if (magnitude > 1) {
-        x /= magnitude;
-        y /= magnitude;
-    }
-
-    const dotX = centerX + x * radius;
-    const dotY = centerY + y * radius;
-
-    ctx.beginPath();
-    ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
-    ctx.fillStyle = "#00ff88";
-    ctx.fill();
-}
-
-function updateGamepadVisual(input) {
-    drawStick("left-stick-canvas", input.leftStick.x, input.leftStick.y);
-    drawStick("right-stick-canvas", input.rightStick.x, input.rightStick.y);
-
-    const l2 = document.getElementById("l2-status");
-    const r2 = document.getElementById("r2-status");
-    if (l2) l2.innerText = `L2 : ${input.L2 ? "✅" : "❌"}`;
-    if (r2) r2.innerText = `R2 : ${input.R2 ? "✅" : "❌"}`;
-}
-
-function pollGamepad() {
-    if (!connectedGamepad) return;
-
-    const input = getGamepadInput();
-    if (input) {
-        updateGamepadVisual(input);
-    }
-
-    requestAnimationFrame(pollGamepad);
+    const popup = document.getElementById('gamepad-popup');
+    if (popup) popup.style.display = 'none';
 }
