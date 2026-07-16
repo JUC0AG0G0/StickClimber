@@ -1,19 +1,40 @@
 import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
 import { triggerGamepadFeedback } from './feedback.js';
 
+// --- Constantes de géométrie / physique ---
+const LEFT_SHOULDER = new THREE.Vector3(-0.4, 2.2, 0);
+const RIGHT_SHOULDER = new THREE.Vector3(0.4, 2.2, 0);
+const ARM_LENGTH = 0.9;   // distance épaule -> main
+const GRAVITY = 0.0981;
+const GROUND_Y = -0.28;
+
+// Angle du bras d'après le stick.
+// Si le stick est relâché (0,0), on garde l'angle courant : le bras "tient" sa pose.
+function stickToAngle(stick, currentAngle) {
+    if (stick.x === 0 && stick.y === 0) return currentAngle;
+    return Math.atan2(stick.x, stick.y);
+}
+
+// Position de la main RELATIVE à l'origine du groupe, pour un bras donné à un angle donné.
+function handLocalOffset(shoulder, angle) {
+    return new THREE.Vector3(
+        shoulder.x + ARM_LENGTH * Math.sin(angle),
+        shoulder.y - ARM_LENGTH * Math.cos(angle),
+        0
+    );
+}
+
 export class Player {
     constructor(scene) {
         this.group = new THREE.Group();
 
         const headGeometry = new THREE.SphereGeometry(0.27, 16, 16);
-        const headMaterial = new THREE.MeshStandardMaterial({ color: "#fdd" });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
+        const head = new THREE.Mesh(headGeometry, new THREE.MeshStandardMaterial({ color: "#fdd" }));
         head.position.y = 2.6;
         this.group.add(head);
 
         const bodyGeometry = new THREE.BoxGeometry(0.5, 1.0, 0.2);
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: "#333" });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        const body = new THREE.Mesh(bodyGeometry, new THREE.MeshStandardMaterial({ color: "#333" }));
         body.position.y = 1.7;
         this.group.add(body);
 
@@ -22,21 +43,21 @@ export class Player {
         const armMaterial = new THREE.MeshStandardMaterial({ color: "#666" });
 
         this.leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        this.leftArm.position.set(-0.4, 2.2, 0);
+        this.leftArm.position.copy(LEFT_SHOULDER);
         this.group.add(this.leftArm);
 
         this.rightArm = new THREE.Mesh(armGeometry, armMaterial);
-        this.rightArm.position.set(0.4, 2.2, 0);
+        this.rightArm.position.copy(RIGHT_SHOULDER);
         this.group.add(this.rightArm);
 
         const handGeometry = new THREE.SphereGeometry(0.1, 16, 16);
 
         this.leftHand = new THREE.Mesh(handGeometry, new THREE.MeshStandardMaterial({ color: "#aaa" }));
-        this.leftHand.position.set(0, -0.9, 0);
+        this.leftHand.position.set(0, -ARM_LENGTH, 0);
         this.leftArm.add(this.leftHand);
 
         this.rightHand = new THREE.Mesh(handGeometry, new THREE.MeshStandardMaterial({ color: "#aaa" }));
-        this.rightHand.position.set(0, -0.9, 0);
+        this.rightHand.position.set(0, -ARM_LENGTH, 0);
         this.rightArm.add(this.rightHand);
 
         const legGeometry = new THREE.BoxGeometry(0.2, 0.8, 0.2);
@@ -51,84 +72,70 @@ export class Player {
         this.rightLeg.position.set(0.15, 1.1, 0);
         this.group.add(this.rightLeg);
 
-        head.castShadow = true;
-        body.castShadow = true;
-        this.leftArm.castShadow = true;
-        this.rightArm.castShadow = true;
-        this.leftHand.castShadow = true;
-        this.rightHand.castShadow = true;
-        this.leftLeg.castShadow = true;
-        this.rightLeg.castShadow = true;
+        this.group.traverse((obj) => { if (obj.isMesh) obj.castShadow = true; });
 
-        this.leftHandAnchored = false;
-        this.rightHandAnchored = false;
-        this.leftHandAnchorPos = new THREE.Vector3();
-        this.rightHandAnchorPos = new THREE.Vector3();
+        // --- État d'ancrage ---
+        this.leftAnchored = false;
+        this.rightAnchored = false;
+        this.leftAnchorPos = new THREE.Vector3();   // position MONDE fixe de la main gauche
+        this.rightAnchorPos = new THREE.Vector3();
 
-        this.group.position.y = -0.28;
-
+        this.group.position.y = GROUND_Y;
         this.wasOnGround = true;
 
         scene.add(this.group);
     }
 
+    // Position monde actuelle de la main pour un bras/angle donné.
+    handWorldPos(shoulder, angle) {
+        return this.group.position.clone().add(handLocalOffset(shoulder, angle));
+    }
+
     update(input) {
         if (!input) return;
 
-        if (input.L2 && !this.leftHandAnchored) {
-            this.leftHandAnchored = true;
-        } else if (!input.L2 && this.leftHandAnchored) {
-            this.leftHandAnchored = false;
-        }
+        // Angle de chaque bras : suit le stick, ou garde sa pose si le stick est relâché.
+        const leftAngle = stickToAngle(input.leftStick, this.leftArm.rotation.z);
+        const rightAngle = stickToAngle(input.rightStick, this.rightArm.rotation.z);
 
-        if (input.R2 && !this.rightHandAnchored) {
-            this.rightHandAnchored = true;
-        } else if (!input.R2 && this.rightHandAnchored) {
-            this.rightHandAnchored = false;
-        }
-
-        if (!this.leftHandAnchored) {
-            const leftAngle = Math.atan2(input.leftStick.x, input.leftStick.y);
+        // --- Au moment PRÉCIS où une main s'accroche, on fige sa position monde. ---
+        if (input.L2 && !this.leftAnchored) {
             this.leftArm.rotation.z = leftAngle;
+            this.leftAnchorPos.copy(this.handWorldPos(LEFT_SHOULDER, leftAngle));
         }
-
-        if (!this.rightHandAnchored) {
-            const rightAngle = Math.atan2(input.rightStick.x, input.rightStick.y);
+        if (input.R2 && !this.rightAnchored) {
             this.rightArm.rotation.z = rightAngle;
+            this.rightAnchorPos.copy(this.handWorldPos(RIGHT_SHOULDER, rightAngle));
+        }
+        this.leftAnchored = input.L2;
+        this.rightAnchored = input.R2;
+
+        // Retour visuel des mains ancrées
+        this.leftHand.material.color.set(this.leftAnchored ? "#f00" : "#aaa");
+        this.rightHand.material.color.set(this.rightAnchored ? "#f00" : "#aaa");
+
+        // --- Deux mains ancrées => personnage totalement bloqué (rien ne bouge). ---
+        if (this.leftAnchored && this.rightAnchored) return;
+
+        // Sinon les bras suivent les sticks
+        this.leftArm.rotation.z = leftAngle;
+        this.rightArm.rotation.z = rightAngle;
+
+        if (this.leftAnchored) {
+            // Le corps pivote autour de la main gauche restée fixe dans le monde.
+            this.group.position.copy(this.leftAnchorPos).sub(handLocalOffset(LEFT_SHOULDER, leftAngle));
+        } else if (this.rightAnchored) {
+            this.group.position.copy(this.rightAnchorPos).sub(handLocalOffset(RIGHT_SHOULDER, rightAngle));
+        } else {
+            // Aucune main accrochée => chute.
+            this.group.position.y -= GRAVITY;
         }
 
-        this.leftHand.material.color.set(this.leftHandAnchored ? "#f00" : "#aaa");
-        this.rightHand.material.color.set(this.rightHandAnchored ? "#f00" : "#aaa");
+        // Collision avec le sol
+        if (this.group.position.y < GROUND_Y) this.group.position.y = GROUND_Y;
 
-        const moveSpeed = 0.03;
-
-        if (this.leftHandAnchored) {
-            const angle = this.leftArm.rotation.z;
-            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
-            this.group.position.sub(offset);
-        }
-
-        if (this.rightHandAnchored) {
-            const angle = this.rightArm.rotation.z;
-            const offset = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0).multiplyScalar(moveSpeed);
-            this.group.position.sub(offset);
-        }
-
-        if (!this.leftHandAnchored && !this.rightHandAnchored) {
-            this.group.position.y -= 0.0981
-        }
-
-        const minY = -0.28;
-        if (this.group.position.y < minY) {
-            this.group.position.y = minY;
-        }
-
-        const onGround = this.group.position.y <= minY;
-
-        if (onGround && !this.wasOnGround) {
-            triggerGamepadFeedback();
-        }
-
+        const onGround = this.group.position.y <= GROUND_Y;
+        if (onGround && !this.wasOnGround) triggerGamepadFeedback();
         this.wasOnGround = onGround;
     }
 }
