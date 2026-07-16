@@ -7,12 +7,19 @@ const RIGHT_SHOULDER = new THREE.Vector3(0.4, 2.2, 0);
 const ARM_LENGTH = 0.9;   // distance épaule -> main
 const GRAVITY = 0.0981;
 const GROUND_Y = -0.28;
+const RELAX_SPEED = 0.05;   // vitesse de retour du bras au repos (0 = figé, 1 = instantané)
 
-// Angle du bras d'après le stick.
-// Si le stick est relâché (0,0), on garde l'angle courant : le bras "tient" sa pose.
-function stickToAngle(stick, currentAngle) {
-    if (stick.x === 0 && stick.y === 0) return currentAngle;
-    return Math.atan2(stick.x, stick.y);
+function approachAngle(current, target, speed) {
+    let diff = target - current;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    return current + diff * speed;
+}
+
+function armAngle(stick, currentAngle, gripping) {
+    if (stick.x !== 0 || stick.y !== 0) return Math.atan2(stick.x, stick.y);
+    const target = gripping ? Math.PI : 0;
+    return approachAngle(currentAngle, target, RELAX_SPEED);
 }
 
 // Position de la main RELATIVE à l'origine du groupe, pour un bras donné à un angle donné.
@@ -94,9 +101,9 @@ export class Player {
     update(input) {
         if (!input) return;
 
-        // Angle de chaque bras : suit le stick, ou garde sa pose si le stick est relâché.
-        const leftAngle = stickToAngle(input.leftStick, this.leftArm.rotation.z);
-        const rightAngle = stickToAngle(input.rightStick, this.rightArm.rotation.z);
+        // Angle de chaque bras (suit le stick, ou revient au repos / en suspension si relâché).
+        const leftAngle = armAngle(input.leftStick, this.leftArm.rotation.z, input.L2);
+        const rightAngle = armAngle(input.rightStick, this.rightArm.rotation.z, input.R2);
 
         // --- Au moment PRÉCIS où une main s'accroche, on fige sa position monde. ---
         if (input.L2 && !this.leftAnchored) {
