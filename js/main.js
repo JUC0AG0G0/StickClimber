@@ -81,9 +81,6 @@ function grabFeedback(input) {
     const grabbedR2 = input.R2 && !lastR2;
     lastL2 = input.L2;
     lastR2 = input.R2;
-
-    if (!isVibrationOn()) return;
-    if (grabbedL2 || grabbedR2) triggerGamepadFeedback();
 }
 
 function loop() {
