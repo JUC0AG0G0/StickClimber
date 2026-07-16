@@ -48,11 +48,12 @@ Voici les grandes étapes du développement du projet :
 - [x] Représentation basique en Three.js
 - [x] Corps segmenté avec articulation physique via Cannon-es
 - [x] Système de score en fonction de la hauteur atteinte
+- [x] Création du personnage stickman**
+
 
 ### 🔜 Prochaine étape
 
-- 🔧 **Création du personnage stickman**
-  - Amélioration de la physique
+- Création terrain infini
 
 ---
 
@@ -75,9 +76,10 @@ Voici les grandes étapes du développement du projet :
 
 ## 📅 Roadmap à venir
 
-- [ ] Création terrain infini
-- [ ] Création physique
+- [ ] Création physique (gravité, terrain chute)
 - [ ] Mise en place du menu principal
 - [ ] Animation de caméra lors du lancement
 - [ ] Interface UI : score, redémarrage
+- [ ] Backend pour score compte
+- [ ] AntiCheat
 - [ ] Design visuel et sonore amélioré
