@@ -1,135 +1,73 @@
-import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
-import { getGamepadInput } from './input.js';
-import { Player } from './player.js';
-import { ClimbingWall } from './wall.js';
-import { triggerGamepadFeedback } from './feedback.js';
-import { initUI, showScreen, getDualSense, saveScore, syncTriggerEffect } from './ui.js';
+// main.js
+// Point d'entrée : assemble scène, caméra, hub de menu 3D, jeu et navigation,
+// puis fait tourner UNE SEULE boucle de rendu (menu ET jeu).
+//
+// Architecture :
+//   core/   scène blanche, style "encre" (ink.js), rig de caméra (orbites)
+//   menu/   hub 3D natif : décor = menu (boutons/panneaux cliquables)
+//   game/   stickman, joueur, mur, état de partie
+//   input/  manette (gamepad, DualSense WebHID, haptique)
+//   ui/     contenus des panneaux (classement, paramètres, compte)
 
-const GROUND_Y = -0.28;
+import { createScene } from './core/scene.js';
+import { CameraRig } from './core/cameraRig.js';
+import { buildMenuHub } from './menu/menuHub.js';
+import { initMenuNav, returnToMenu, getCurrentSection } from './menu/menuNav.js';
+import { Game } from './game/game.js';
+import { initControlsPanel } from './ui/controlsPanel.js';
+import { initAccountPanel } from './ui/accountPanel.js';
 
-// ============================ Scène ============================
-const scene = new THREE.Scene();
-scene.background = new THREE.Color('#87CEEB');
+// ---------- Mise en place ----------
+const canvas = document.getElementById('game-canvas');
+const { scene, camera, renderer } = createScene(canvas);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 2, 5);
-camera.rotation.x = -0.3;
+const rig = new CameraRig(camera);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: document.getElementById('game-canvas') });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Le joueur + le mur sont créés une fois et restent dans la scène :
+// le stickman qui attend dans le diorama EST le personnage du jeu.
+const game = new Game({ scene, rig });
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+const hub = buildMenuHub(scene, game.player);
+rig.snapTo(hub.poses.home);
+
+game.onQuit = () => {
+    hub.setPlayerMenuMode(true); // repositionne le perso en pose d'attente
+    returnToMenu();
+};
+
+initControlsPanel({
+    panel: hub.panels.settings,
+    buttons: hub.settingsButtons,
+    isActive: () => getCurrentSection() === 'settings',
+});
+initAccountPanel({
+    panel: hub.panels.account,
+    buttons: hub.accountButtons,
+});
+initMenuNav({
+    rig,
+    hub,
+    camera,
+    canvas,
+    onPlay: () => {
+        hub.setPlayerMenuMode(false);
+        game.start(); // cinématique : il marche jusqu'au mur, puis grimpe
+    },
+    onQuitRequest: () => game.quit(), // bouton "Menu" du HUD
 });
 
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(0, 10, 10);
-light.castShadow = true;
-light.shadow.camera.left = -10;
-light.shadow.camera.right = 10;
-light.shadow.camera.top = 10;
-light.shadow.camera.bottom = -10;
-light.shadow.camera.near = 1;
-light.shadow.camera.far = 20;
-scene.add(light);
+// ---------- Boucle unique ----------
+let last = performance.now();
 
-const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 20),
-    new THREE.MeshStandardMaterial({ color: 0x228b22 })
-);
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
-scene.add(floor);
+function tick(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); // clamp si l'onglet a dormi
+    last = now;
 
-const player = new Player(scene);
-const wall = new ClimbingWall(scene);
-
-// ============================ État de jeu ============================
-let running = false;
-let score = 0;
-let maxHeight = 0;
-let lastL2 = false;
-let lastR2 = false;
-
-function resetGame() {
-    player.group.position.set(0, GROUND_Y, 0);
-    player.leftArm.rotation.z = 0;
-    player.rightArm.rotation.z = 0;
-    player.leftAnchored = false;
-    player.rightAnchored = false;
-    player.leftHold = null;
-    player.rightHold = null;
-    wall.reset(); // repart d'un mur vierge (sinon les prises de la tentative précédente resteraient affichées)
-    score = 0;
-    maxHeight = 0;
-    lastL2 = false;
-    lastR2 = false;
-}
-
-function updateScore() {
-    const h = player.group.position.y;
-    if (h > maxHeight) {
-        maxHeight = h;
-        score = Math.floor(maxHeight * 3);
-    }
-    const el = document.getElementById('score-display');
-    if (el) el.textContent = `Score : ${score}`;
-}
-
-// Petite vibration quand une main s'accroche.
-function grabFeedback(input) {
-    if (!input) return;
-    if (input.L2 && !lastL2) triggerGamepadFeedback();
-    if (input.R2 && !lastR2) triggerGamepadFeedback();
-    lastL2 = input.L2;
-    lastR2 = input.R2;
-}
-
-function loop() {
-    if (!running) return;
-
-    const input = getGamepadInput();
-    wall.update(player.group.position.y);
-    player.update(input, wall);
-    grabFeedback(input);
-    updateScore();
-
-    // Quitter vers le menu avec Options (bouton 9).
-    const pad = [...(navigator.getGamepads?.() || [])].find((p) => p);
-    if (pad && pad.buttons[9]?.pressed) {
-        quitToMenu();
-        return;
-    }
-
-    camera.position.x = player.group.position.x;
-    camera.position.y = player.group.position.y + 2.7;
-    camera.lookAt(player.group.position);
+    rig.update(dt);
+    if (game.running) game.update(dt); // intro (marche/échauffement) puis gameplay
+    else hub.update(now / 1000);       // idle du perso + vie du diorama
 
     renderer.render(scene, camera);
-    requestAnimationFrame(loop);
+    requestAnimationFrame(tick);
 }
-
-function startGame() {
-    resetGame();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    // Applique l'état des gâchettes choisi dans le menu (API à jour : ui.js/dualsense.js).
-    syncTriggerEffect();
-
-    running = true;
-    loop();
-}
-
-function quitToMenu() {
-    running = false;
-    saveScore(score);
-    showScreen('menu');
-}
-
-// ============================ Démarrage ============================
-initUI({ onPlay: startGame, onBack: quitToMenu });
-showScreen('menu');
+requestAnimationFrame(tick);

@@ -1,13 +1,11 @@
-// dualsense.js
+// input/dualsense.js
 // Pilotage minimal des gâchettes adaptatives (+ vibration, + LED) d'une
 // manette PS5 via WebHID.
 //
 // Encodage confirmé fonctionnel : mode "Weapon" (0x02), avec startPos /
-// endPos / force écrits directement (0-255) dans le report USB — c'est
-// exactement l'encodage de ton fichier de test qui marche.
+// endPos / force écrits directement (0-255) dans le report USB.
 //
-// USB uniquement (le Bluetooth demande un report 0x31 + CRC32 différent ;
-// dis-moi si tu en as besoin, je l'ajouterai à part).
+// USB uniquement (le Bluetooth demande un report 0x31 + CRC32 différent).
 
 const SONY_VID = 0x054c;
 const DUALSENSE_PIDS = [0x0ce6, 0x0df2]; // DualSense, DualSense Edge
@@ -61,9 +59,6 @@ export class DualSense {
     }
 
     // startPos / endPos / force en 0-255, sur la course complète de la gâchette.
-    // Ex : startPos=200, endPos=220, force=255
-    //   -> course normale jusqu'à 200, point dur entre 200 et 220,
-    //      puis petite zone molle de 220 à 255.
     setTriggerWeapon(side = 'both', startPos = 100, endPos = 150, force = 255) {
         this._setTrigger(side, { mode: TRIGGER_MODE_WEAPON, startPos, endPos, force });
         return this.flush();

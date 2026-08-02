@@ -1,8 +1,16 @@
-import { getDualSense } from './ui.js';
+// input/feedback.js
+// Retour haptique : DualSense via WebHID si connectée, sinon repli sur
+// l'API Gamepad standard.
+// Nouveau : respecte le toggle "Vibration" des Paramètres (avant, le toggle
+// existait dans l'UI mais n'était jamais consulté ici).
+
+import { getDualSense, isVibrationOn } from '../ui/controlsPanel.js';
 
 let rumbleTimeout = null;
 
 export function triggerGamepadFeedback({ big = 255, small = 255, duration = 100 } = {}) {
+    if (!isVibrationOn()) return;
+
     const ds = getDualSense();
 
     if (ds && ds.connected) {
