@@ -27,7 +27,7 @@ const CONTENT = [
     { t: 'uniquement après une action explicite.' },
     { h: 'TECHNOLOGIES' },
     { link: 'three.js (licence MIT)', url: 'https://threejs.org' },
-    { link: 'Code source du jeu', url: 'https://github.com/JUCOAGOGO/stickclimber' },
+    { link: 'Code source du jeu', url: 'https://github.com/JUC0AG0G0/StickClimber' },
 ];
 
 const PAD_X = 46;      // marge gauche du texte
