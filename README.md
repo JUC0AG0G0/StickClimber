@@ -4,7 +4,14 @@
 
 👉 **[Jouer à la dernière version (branche `dev`)](http://stickclimber.julescorneille.fr/)**
 
-> ⚠️ Une **manette est nécessaire** pour jouer (il n'y a pas encore de contrôle clavier/souris). La souris sert uniquement à naviguer dans le menu.
+> ⚠️ Pour l'instant, une **manette est nécessaire** pour jouer. La souris sert uniquement à naviguer dans le menu. Le jeu tactile sur mobile est prévu (voir la feuille de route).
+
+## 🎯 Objectifs
+
+- Un jeu d'escalade **physique, lisible et jouable en sessions courtes**, dont le cœur est le plaisir de grimper un bras après l'autre.
+- Une **identité visuelle « encre »** cohérente, du menu au mur, avec une interface soignée.
+- Un jeu **jouable dans le navigateur, sans installation**, à la **manette** (toute manette à deux joysticks, filaire ou Bluetooth) et sur **mobile**. Pas de contrôle clavier/souris.
+- Un jeu **100 % local** : aucun compte, aucun serveur, les scores restent sur l'appareil.
 
 ---
 
@@ -77,17 +84,47 @@ test.html, test.js  essais manuels des gâchettes adaptatives
 
 ## 🗺️ Feuille de route
 
-- [x] Personnage stickman articulé et contrôle bras par bras
+**✅ v0.1 : Prototype jouable (fait)**
+- [x] Stickman articulé et contrôle bras par bras
 - [x] Ancrage aux prises, pivot du corps, gravité
 - [x] Mur infini généré procéduralement
 - [x] Score selon la hauteur et classement local
-- [x] Menu principal 3D, animation de caméra et cinématique de lancement
-- [x] Gâchettes adaptatives et vibration (DualSense)
-- [ ] Contrôles clavier / souris
+- [x] Menu 3D, caméra orbitale, cinématique de lancement
+- [x] DualSense : gâchettes adaptatives et vibration
+
+**🔧 v0.2 : Manettes et solidité (prochaine étape)**
+- [ ] Prise en charge de **toutes les manettes à deux joysticks**, en filaire comme en Bluetooth (Xbox, PlayStation, Switch, génériques) via la Gamepad API
+- [ ] Cartographie des boutons et des axes selon le modèle de manette, avec zones mortes réglables
 - [ ] Gravité indépendante du taux de rafraîchissement (`dt`)
-- [ ] Classement et comptes en ligne (l'authentification actuelle est une maquette)
-- [ ] Design sonore
-- [ ] Publication finale sur `main`
+- [ ] Verrouiller Three.js (import map ou copie locale)
+- [ ] Ajouter une licence
+
+**🎨 v0.3 : Interface (UI)**
+- [ ] Refonte de l'interface : menu, HUD, panneaux, cohérents avec le style « encre »
+- [ ] Écran de fin de partie : score, meilleur score, relance rapide
+- [ ] Meilleure lisibilité des indications de contrôle selon la manette détectée
+- [ ] Transitions et retours visuels plus soignés
+
+**🧗 v0.4 : Animation de chute**
+- [ ] Animation dédiée de chute : le stickman se débat puis tombe, au lieu de simplement descendre
+- [ ] Réception au sol animée, avec retour de vibration
+- [ ] Transition fluide entre la chute, l'écran de fin de partie et la relance
+
+**📱 v0.5 : Mobile**
+- [ ] Contrôles tactiles adaptés au jeu (un contrôle par bras et un par prise)
+- [ ] Interface et rendu adaptés aux petits écrans et à l'orientation
+- [ ] Optimisation des performances sur mobile
+- [ ] Prise en charge d'une manette Bluetooth connectée au mobile
+
+**🚀 v1.0 : Sortie officielle**
+- [ ] Design sonore (accroche, chute, ambiance)
+- [ ] Page de présentation avec captures et vidéo
+- [ ] Fusion de `dev` dans `main`
+
+**💡 Idées pour plus tard**
+- Prises spéciales (glissantes, fragiles, de repos)
+- Fatigue des bras
+- Difficulté progressive avec la hauteur
 
 ## 📄 Licence
 
