@@ -2,7 +2,7 @@
 
 **StickClimber** est un jeu d'escalade expérimental en WebGL : tu pilotes un stickman à la manette, un bras par stick, et tu t'accroches aux prises d'un mur infini avec les gâchettes. Plus tu montes haut, plus ton score augmente.
 
-👉 **[Jouer à la dernière version (branche `dev`)](http://stickclimber.julescorneille.fr/)**
+👉 **[Jouer en ligne](http://stickclimber.julescorneille.fr/)**
 
 > ⚠️ Pour l'instant, une **manette est nécessaire** pour jouer. La souris sert uniquement à naviguer dans le menu. Le jeu tactile sur mobile est prévu (voir la feuille de route).
 
@@ -43,7 +43,6 @@ Le projet est 100 % côté client, sans backend ni étape de build : il suffit d
 ```bash
 git clone https://github.com/JUC0AG0G0/StickClimber.git
 cd StickClimber
-git checkout dev   # le code du jeu est sur dev
 ```
 
 Puis servir le dossier, par exemple avec l'extension **Live Server** de VS Code (`http://127.0.0.1:5500`) ou :
@@ -76,11 +75,9 @@ test.html, test.js  essais manuels des gâchettes adaptatives
 - **HTML / CSS / JavaScript** (modules ES), sans framework
 - La physique (ancrage, pivot, gravité) est codée à la main ; Cannon-es n'est plus utilisé.
 
-## 🌿 Branches
+## 🌿 Branche
 
-- `main` : version stable, mise à jour uniquement lors des sorties officielles
-- `dev` : développement actif (c'est la version en ligne)
-- `<fonctionnalité>` : branches temporaires, fusionnées puis supprimées
+Le projet n'utilise qu'une seule branche : `main`.
 
 ## 🗺️ Feuille de route
 
@@ -119,7 +116,6 @@ test.html, test.js  essais manuels des gâchettes adaptatives
 **🚀 v1.0 : Sortie officielle**
 - [ ] Design sonore (accroche, chute, ambiance)
 - [ ] Page de présentation avec captures et vidéo
-- [ ] Fusion de `dev` dans `main`
 
 **💡 Idées pour plus tard**
 - Prises spéciales (glissantes, fragiles, de repos)
