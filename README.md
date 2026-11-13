@@ -94,7 +94,6 @@ Le projet n'utilise qu'une seule branche : `main`.
 - [ ] Cartographie des boutons et des axes selon le modèle de manette, avec zones mortes réglables
 - [ ] Gravité indépendante du taux de rafraîchissement (`dt`)
 - [ ] Verrouiller Three.js (import map ou copie locale)
-- [ ] Ajouter une licence
 
 **🎨 v0.3 : Interface (UI)**
 - [ ] Refonte de l'interface : menu, HUD, panneaux, cohérents avec le style « encre »
@@ -113,6 +112,15 @@ Le projet n'utilise qu'une seule branche : `main`.
 - [ ] Optimisation des performances sur mobile
 - [ ] Prise en charge d'une manette Bluetooth connectée au mobile
 
+**⚖️ v0.6 : Légal et conformité**
+- [ ] Compléter les mentions légales : l'hébergeur est encore un texte provisoire (« [OVH, adresse de l'hébergeur] ») dans `legalPanel.js`
+- [ ] Ajouter une licence au dépôt (MIT par exemple) et la mentionner dans le jeu
+- [ ] Rédiger une politique de confidentialité (aucune donnée collectée, scores en `localStorage` sur l'appareil)
+- [ ] Informer clairement sur le stockage local et sur l'accès à la manette (WebHID)
+- [ ] Ajouter les crédits et licences des dépendances (Three.js, polices, sons)
+- [ ] Vérifier la conformité si des sons, images ou polices de tiers sont utilisés
+- [ ] Revoir ces points si le jeu devient un jour connecté (comptes, classement en ligne)
+
 **🚀 v1.0 : Sortie officielle**
 - [ ] Design sonore (accroche, chute, ambiance)
 - [ ] Page de présentation avec captures et vidéo
@@ -124,4 +132,4 @@ Le projet n'utilise qu'une seule branche : `main`.
 
 ## 📄 Licence
 
-Aucune licence n'est définie pour l'instant : tous droits réservés par défaut.
+Aucune licence n'est définie pour l'instant : tous droits réservés par défaut (voir la v0.6 de la feuille de route).
